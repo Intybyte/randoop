@@ -1,6 +1,8 @@
 package randoop.types;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import org.junit.Test;
@@ -14,6 +16,9 @@ public class ParameterBoundTest {
    * @param <T> the type parameter
    */
   interface WildcardSelfBound<T extends WildcardSelfBound<?>> {}
+
+  /** An implementation of {@link WildcardSelfBound} that instantiates it with itself. */
+  static class ConcreteWildcardSelfBound implements WildcardSelfBound<ConcreteWildcardSelfBound> {}
 
   /**
    * A type parameter whose bound refers to {@link MutualB}, which refers back to this class.
@@ -49,6 +54,18 @@ public class ParameterBoundTest {
   @Test
   public void testWildcardSelfBound() {
     assertEquals(1, GenericClassType.forClass(WildcardSelfBound.class).getTypeParameters().size());
+  }
+
+  /**
+   * Checking a type against the bound {@code WildcardSelfBound<?>} terminates. The capture
+   * conversion of the bound has a capture variable whose upper bound is the bound itself.
+   */
+  @Test
+  public void testWildcardSelfBoundIsUpperBound() {
+    TypeVariable t = GenericClassType.forClass(WildcardSelfBound.class).getTypeParameters().get(0);
+    ReferenceType concrete = ClassOrInterfaceType.forClass(ConcreteWildcardSelfBound.class);
+    assertTrue(t.getUpperTypeBound().isUpperBound(concrete, new Substitution()));
+    assertFalse(t.getUpperTypeBound().isUpperBound(JavaTypes.STRING_TYPE, new Substitution()));
   }
 
   @Test
